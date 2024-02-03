@@ -1,3 +1,5 @@
 # flappy_bird
 
-A new Flutter project.
+## To do
+ - music
+ - medals
