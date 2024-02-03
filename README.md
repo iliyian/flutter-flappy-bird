@@ -3,3 +3,4 @@
 ## To do
  - music
  - medals
+ - black edge on adnroid
