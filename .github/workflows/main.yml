@@ -27,10 +27,23 @@ jobs:
     - name: Build for web
       run: flutter build web
 
-    - name: Archive artifacts
+    - name: Build for windows
+      run: flutter build windows --release
+
+    - name: Archive android
       uses: actions/upload-artifact@v2
       with:
         name: build
-        path: |
-          build/app/outputs/flutter-apk/
-          build/web/
+        path: build/app/outputs/flutter-apk/
+
+    - name: Archive web
+      uses: actions/upload-artifact@v2
+      with:
+        name: build
+        path: build/web
+
+    - name: Archive windows
+      uses: actions/upload-artifact@v2
+      with:
+        name: build
+        path: build/windows/x64/runner/Release
