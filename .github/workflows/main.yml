@@ -30,12 +30,12 @@ jobs:
     - name: Archive android
       uses: actions/upload-artifact@v2
       with:
-        name: build
+        name: android build
         path: build/app/outputs/flutter-apk/
 
     - name: Archive web
       uses: actions/upload-artifact@v2
       with:
-        name: build
+        name: web build
         path: build/web
         
