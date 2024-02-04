@@ -1,15 +1,19 @@
+import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'startpage.dart';
 import 'gamepage.dart';
+import 'music.dart';
 
 late SharedPreferences prefs;
-late int? score, best;
+late Random random;
+late int? scoreq, bestq;
+late int score, best;
+late String backgroundScene, birdColor;
 bool newBest = false;
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-
   prefs = await SharedPreferences.getInstance();
 
   // print("alive");
@@ -17,44 +21,45 @@ Future<void> main() async {
   //
   // prefs.clear();
 
-  score = prefs.getInt("score");
-  score ??= 0;
-  best = prefs.getInt("best");
-  best ??= 0;
+  random = Random();
+
+  backgroundScene = FlappyBird
+      .backgroundScenes[random.nextInt(FlappyBird.backgroundScenes.length)];
+  birdColor =
+      FlappyBird.birdColors[random.nextInt(FlappyBird.birdColors.length)];
 
   runApp(FlappyBird());
 }
 
-void incScore() {
-  score = score! + 1;
-  if (best! < score!) {
-    best = score;
-    newBest = true;
-  }
-  prefs.setInt("best", best!);
-  prefs.setInt("score", score!);
-}
-
 // ignore: must_be_immutable
 class FlappyBird extends StatelessWidget {
-  FlappyBird({super.key});
+  FlappyBird({super.key}) {
+    scoreq = prefs.getInt("score");
+    scoreq ??= 0;
+    score = scoreq!;
+
+    bestq = prefs.getInt("best");
+    bestq ??= 0;
+    best = bestq!;
+
+    music = Music();
+  }
 
   static const double width = 360, height = 720, groudnHeight = 120;
   static late AnimationController groundController;
   static late Animation<double> groundAnimation;
-  late SharedPreferences prefs;
 
-  static const List<String> birdsPath = [
-    "assets/img/yellow-up-bird.png",
-    "assets/img/yellow-even-bird.png",
-    "assets/img/yellow-down-bird.png",
-  ];
+  static final List<String> birdColors = ["yellow", "red", "blue"];
+  static final List<String> birdWings = ["up", "even", "down"];
+  static final List<String> backgroundScenes = ["day", "night"];
+
+  static late Music music;
 
   // static GlobalKey backgroundKey = GlobalKey();
   // static GlobalKey groundKey() => GlobalKey();
   static List<BuildContext> groundContexts = [];
 
-  static bool gameovering = false;
+  static bool gameovering = false, newBest = false;
 
   static Rect contextToRect(BuildContext context) {
     RenderBox renderBox = context.findRenderObject() as RenderBox;
@@ -71,11 +76,19 @@ class FlappyBird extends StatelessWidget {
     return rect;
   }
 
+  static String getBirdPath(int wing) {
+    return "assets/img/$birdColor-${birdWings[wing]}-bird.png";
+  }
+
+  static String getBackgroundPath() {
+    return "assets/img/background-city-$backgroundScene.png";
+  }
+
   static Widget backgroundCity() {
     return Hero(
       tag: "background-city",
       child: Image.asset(
-        "assets/img/background-city-day.png",
+        getBackgroundPath(),
         fit: BoxFit.fill,
         key: Key("background-key"),
       ),
@@ -110,6 +123,16 @@ class FlappyBird extends StatelessWidget {
     return grounds;
   }
 
+  static void incScore() {
+    score = score + 1;
+    if (best < score) {
+      best = score;
+      newBest = true;
+    }
+    prefs.setInt("best", best);
+    prefs.setInt("score", score);
+  }
+
   static void initGround(TickerProvider tickerProvider) {
     groundController = AnimationController(
       duration: Duration(seconds: 2),
@@ -118,6 +141,31 @@ class FlappyBird extends StatelessWidget {
     groundAnimation = Tween<double>(begin: 0, end: -FlappyBird.width)
         .animate(groundController);
     groundController.repeat();
+  }
+
+  AspectRatio mainWrap(Widget? main) {
+    return AspectRatio(
+      aspectRatio: 1,
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+            color: backgroundScene == "day" ? Colors.white : Colors.black),
+        child: Center(
+            child: Container(
+          height: 720,
+          width: 360,
+          decoration: BoxDecoration(
+            border: Border.all(
+              width: 3,
+              color: Colors.teal,
+              strokeAlign: BorderSide.strokeAlignOutside,
+            ),
+            borderRadius: BorderRadius.circular(15),
+          ),
+          clipBehavior: Clip.hardEdge,
+          child: ClipRRect(child: main),
+        )),
+      ),
+    );
   }
 
   void dispose() {
@@ -130,11 +178,11 @@ class FlappyBird extends StatelessWidget {
         title: "Flappy Bird",
         initialRoute: "/",
         routes: {
-          "/": (context) => Center(
-              child: SizedBox(height: 720, width: 360, child: StartPage())),
-          "/game": (context) => Center(
-              child: SizedBox(height: 720, width: 360, child: GamePage())),
+          "/": (context) => mainWrap(StartPage()),
+          "/game": (context) => mainWrap(GamePage())
         },
-        theme: ThemeData(useMaterial3: true));
+        theme: ThemeData(
+          useMaterial3: true,
+        ));
   }
 }

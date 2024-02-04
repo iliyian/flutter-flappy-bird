@@ -21,7 +21,7 @@ class _StartPageState extends State<StartPage> with TickerProviderStateMixin {
       isPlayButtonTapped = false,
       isRankButtonTapped = false;
 
-  final Uri rateUrl = Uri.parse("https://github.com/iliyian/flappy_bird");
+  final Uri rateUrl = Uri.parse("https://github.com/iliyian/flutter-flappy-bird");
 
   late List<GlobalKey> groundKeys;
 
@@ -54,7 +54,7 @@ class _StartPageState extends State<StartPage> with TickerProviderStateMixin {
       vsync: this,
     );
     logoBirdWingAnimation =
-        IntTween(begin: 0, end: FlappyBird.birdsPath.length - 1)
+        IntTween(begin: 0, end: FlappyBird.birdWings.length - 1)
             .animate(logoBirdWingController);
     logoBirdWingController.repeat(reverse: true);
   }
@@ -183,9 +183,9 @@ class _StartPageState extends State<StartPage> with TickerProviderStateMixin {
 
   Positioned startPageBird() {
     return Positioned(
-      top: 230 + logoBirdFloatAnimation.value,
+      top: 260 + logoBirdFloatAnimation.value,
       child: Image.asset(
-        FlappyBird.birdsPath[logoBirdWingAnimation.value],
+        FlappyBird.getBirdPath(logoBirdWingAnimation.value),
         scale: 0.8,
       ),
     );

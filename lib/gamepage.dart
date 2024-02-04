@@ -25,11 +25,11 @@ class _GamePageState extends State<GamePage> with TickerProviderStateMixin {
       gameOverController,
       buttonTapController;
 
-  static const double tubeVdistance = 150, // 管道纵向间隔
+  static const double tubeVdistance = 125, // 管道纵向间隔
       tubeCdistance = 195, // 管道横向间隔
       tubeWidth = 65, // 管道宽度
       tubeHeight = 400; // 管道最大高度，可能超出视图
-  final double birdJumpHeight = 30, // 鸟跳的高度
+  final double birdJumpVelocity = 280, // 鸟跳的速度
       birdJumpAngle = 23, // 鸟跳的角度
       birdX = 50, // 鸟相对于左侧屏幕边界的像素距离
       birdJumpDuration = 300; // 鸟跳一次的时间
@@ -44,11 +44,12 @@ class _GamePageState extends State<GamePage> with TickerProviderStateMixin {
   static List<BuildContext> tubeContexts = [];
   // 用于碰撞检测
 
-  Random random = Random();
-
   late Bird bird;
 
-  bool playing = false, readying = false, showNewBest = false;
+  bool playing = false,
+      readying = false,
+      showNewBest = false,
+      showMadel = false;
   static bool canScore = false;
 
   @override
@@ -86,7 +87,8 @@ class _GamePageState extends State<GamePage> with TickerProviderStateMixin {
         max: (FlappyBird.height - FlappyBird.groudnHeight) / 2 + 30);
     bird.angleController.repeat(
         min: 0, max: 0, reverse: true, period: Duration(milliseconds: 1000));
-    bird.setWing(0, 2, Duration(milliseconds: 500));
+    bird.setWing(
+        0, FlappyBird.birdWings.length - 1, Duration(milliseconds: 500));
   }
 
   Image getNumImage(int x, bool isBig) {
@@ -211,10 +213,7 @@ class _GamePageState extends State<GamePage> with TickerProviderStateMixin {
       components.add(scoreOnBoardPositioned());
       components.add(bestOnBoardPositioned());
 
-      // components.add(
-      //     FlappyBird.playButton(context, bottom: buttonsBottomAnimation.value));
-      // components
-      //     .add(FlappyBird.rankButton(bottom: buttonsBottomAnimation.value));
+      components.add(medalPositioned());
     }
 
     if (!FlappyBird.gameovering) {
@@ -224,7 +223,7 @@ class _GamePageState extends State<GamePage> with TickerProviderStateMixin {
         right: 0,
         child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
-            children: numRowChilren(score!, true)),
+            children: numRowChilren(score, true)),
       ));
     }
 
@@ -370,6 +369,35 @@ class _GamePageState extends State<GamePage> with TickerProviderStateMixin {
     );
   }
 
+  String? getMaterial() {
+    if (score < 3) {
+      return null;
+    } else if (score < 10) {
+      return "fe";
+    } else if (score < 15) {
+      return "cu";
+    } else if (score < 25) {
+      return "ag";
+    } else {
+      return "au";
+    }
+  }
+
+  Positioned medalPositioned() {
+    String? material = getMaterial();
+    // print(material);
+    return Positioned(
+      top: 330,
+      left: 58,
+      child: Visibility(
+          visible: material != null && showMadel,
+          child: Image.asset(
+            "assets/img/$material-medal.png",
+            scale: 0.7,
+          )),
+    );
+  }
+
   void gameOver() {
     FlappyBird.gameovering = true;
 
@@ -393,17 +421,21 @@ class _GamePageState extends State<GamePage> with TickerProviderStateMixin {
             curve: Interval(0.5, 0.7, curve: Curves.easeOut)));
 
     scoreOnBoardValueAnimation =
-        Tween<double>(begin: -1, end: score!.toDouble()).animate(
+        Tween<double>(begin: -1, end: score.toDouble()).animate(
             CurvedAnimation(
                 parent: gameOverController, curve: Interval(0.7, 0.85)));
 
-    bestOnBoardValueAnimation = Tween<double>(begin: -1, end: best!.toDouble())
+    bestOnBoardValueAnimation = Tween<double>(begin: -1, end: best.toDouble())
         .animate(CurvedAnimation(
             parent: gameOverController, curve: Interval(0.85, 1)));
 
-    gameOverController.forward().then((value) => {
-          if (newBest) {showNewBest = true}
-        });
+    // 这里应该有个swooshing的
+    gameOverController.forward().then((value) {
+      if (newBest) {
+        showNewBest = true;
+      }
+      showMadel = true;
+    });
   }
 }
 
@@ -437,8 +469,8 @@ class Bird {
         child: SizedBox(child: Builder(builder: (context) {
           birdContext = context;
           return Image.asset(
-            FlappyBird.birdsPath[wingAnimation.value.round()],
-            scale: 0.9,
+            FlappyBird.getBirdPath(wingAnimation.value.round()),
+            scale: 0.95,
             // fit: BoxFit.fill,
           );
         })),
@@ -496,6 +528,7 @@ class Bird {
       if (rect.top < 0 || rect.bottom < 0) continue;
       if (bird.left >= rect.left && bird.right <= rect.right) {
         _GamePageState.canScore = false;
+        FlappyBird.music.play("score");
         return true;
       }
     }
@@ -507,7 +540,7 @@ class Bird {
       crash();
     }
     if (checkScore()) {
-      incScore();
+      FlappyBird.incScore();
     }
   }
 
@@ -516,7 +549,8 @@ class Bird {
     if (crashing) return;
     print(_GamePageState.tubesController.status);
 
-    setWing(1, FlappyBird.birdsPath.length - 1, Duration(milliseconds: 200));
+    FlappyBird.music.play("jump");
+    setWing(0, FlappyBird.birdWings.length - 1, Duration(milliseconds: 100));
     setHeight(heightController.value, -280, checkMove);
     setAngle(angleAnimation.value, -23 * pi / 180, Duration(milliseconds: 300),
         Curves.decelerate, () {
@@ -527,7 +561,7 @@ class Bird {
   }
 
   void fall(double height, double angle) {
-    setWing(0, FlappyBird.birdsPath.length - 1, Duration(milliseconds: 1000));
+    setWing(0, FlappyBird.birdWings.length - 1, Duration(milliseconds: 1000));
     setHeight(height, 0, checkMove);
     print("angle: $angle");
     setAngle(angle, 90 * pi / 180, Duration(milliseconds: 900), Curves.easeIn,
@@ -546,6 +580,9 @@ class Bird {
     _GamePageState.tubesController.stop();
     FlappyBird.groundController.stop();
 
+    // 放外面就会播放很多很多次
+    FlappyBird.music.play("hit");
+    FlappyBird.music.play("die");
     setWing(1, 1, Duration(seconds: 1));
 
     setAngle(angleAnimation.value, 90 * pi / 180, Duration(milliseconds: 300),

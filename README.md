@@ -3,4 +3,7 @@
 ## To do
  - music
  - medals
- - black edge on adnroid
+ - ~~black edge on android~~
+ - ratio and distance refine on different platforms
+ - unexpected crash
+ - pause button
