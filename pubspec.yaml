@@ -1,7 +1,7 @@
 name: flappy_bird
 description: "Flappy bird simulation"
 publish_to: 'none'
-version: 0.1.0
+version: 1.0.1
 
 environment:
   sdk: '>=3.2.5 <4.0.0'
