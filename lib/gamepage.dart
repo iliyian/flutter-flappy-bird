@@ -180,7 +180,7 @@ class _GamePageState extends State<GamePage> with TickerProviderStateMixin {
 
         tubesUpsideDY.removeAt(0);
         tubesUpsideDY.add(tubeGenerate(true));
-        print("${tubesUpsideDY}");
+        print("{$tubesUpsideDY}");
 
         tubesController.reset();
         tubesController.forward();
